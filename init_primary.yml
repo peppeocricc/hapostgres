@@ -1,0 +1,29 @@
+- name: Install python
+  hosts: "{{ node }}"
+  gather_facts: no
+  
+  tasks:
+  - name: Fail if this node is not a db
+    fail:
+      msg: "This playbook must be run on db0, db1 or db2"
+    when:
+      not inventory_hostname in ["db0","db1","db2"]
+
+  - name: Install python
+    raw: yum install -y python2
+
+- name: Install and configure postgres and repmgr
+  hosts: "{{ node }}"
+  gather_facts: yes
+  
+  tasks:
+  - name: Set somaxconn in sysctl.conf
+    ansible.posix.sysctl:
+      name: net.core.somaxconn
+      value: '{{ somaxconn }}'
+      state: present
+      reload: yes
+
+  - name: Initialize primary
+    include_role:
+      name: init_primary 

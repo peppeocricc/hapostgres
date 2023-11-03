@@ -1,0 +1,35 @@
+- name: Install docker, build the image and start the container
+  hosts: "{{ node }}"
+  gather_facts: no
+
+  tasks:
+  - name: ca
+    shell: cat /etc/hostname
+    register: varhostname
+
+  - name: ca1
+    debug:
+      var: varhostname.stdout
+
+  - name: Change ssh port to let ansible connect to the container
+    set_fact:
+      ansible_port: 2023
+
+  - name: ca2
+    shell: cat /etc/hostname
+    register: varhostname2
+
+  - name: ca12
+    debug:
+      var: varhostname2.stdout
+  
+  #- name: dfdf
+  #  meta: reset_connection
+
+  #- name: Change ssh port to let ansible connect to the container
+  #  set_fact:
+  #    ansible_port: 22
+  
+  - name: afas
+    meta: reset_connection
+

@@ -1,0 +1,72 @@
+- name: Install python
+  hosts: "{{ node }}"
+  gather_facts: no
+  
+  tasks:
+  - name: Reset	connection
+    meta: reset_connection
+
+  - name: Install python
+    raw: yum install -y python python3 python-setuptools
+
+- name: Install docker, build the image and start the container
+  hosts: "{{ node }}"
+  gather_facts: yes
+  vars:
+    docker_package_state: present
+    pip_install_packages: 
+      - name: docker
+
+  tasks:
+  - name: Install docker and build the image
+    include_role:
+      name: build_image
+
+  - name: Start docker container local_ssh (based on local/c7-systemd-sshd)
+    community.docker.docker_container:
+      name: postgres_ha
+      state: started
+      auto_remove: yes
+      privileged: yes
+      container_default_behavior: no_defaults
+      image: local/c7-systemd-sshd
+      sysctls:
+        net.core.somaxconn: "{{ somaxconn }}"
+      volumes:
+        - /sys/fs/cgroup:/sys/fs/cgroup:ro
+        - '{{ postgresql_data }}:{{ postgresql_data }}'
+      ports:
+        - "{{ docker_db_ssh_port }}:22"
+        - "{{ postgresql_port }}:{{ postgresql_port }}"
+    vars:
+      ansible_python_interpreter: /usr/bin/python3
+
+  - name: Change ssh port to let ansible connect to the container
+    set_fact:
+      ansible_port: "{{ docker_db_ssh_port }}"
+
+  - name: Wait for ssh daemon to come up on the container
+    wait_for_connection:
+
+  - name: Create system group postgres on the container
+    group:
+      name: postgres
+      state: present
+      system: yes
+      gid: "{{ postgresuser.group }}"
+
+  - name: Create system user postgres on the container
+    user:
+      name: postgres
+      group: postgres
+      system: yes
+      state: present
+      home: "/var/lib/pgsql"
+      comment: "PostgreSQL Server"
+      password: "!"
+      shell: "/bin/bash"
+      uid: "{{ postgresuser.uid }}"
+
+  - name: Initialize replica
+    include_role:
+      name: init_replica

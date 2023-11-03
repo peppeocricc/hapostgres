@@ -1,0 +1,2 @@
+FROM local/c7-systemd-sshd
+COPY sshd_config /etc/ssh/sshd_config

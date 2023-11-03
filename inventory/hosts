@@ -1,0 +1,9 @@
+[all_db]
+db0 ansible_host=192.168.33.201 ansible_user=root
+db1 ansible_host=192.168.33.202 ansible_user=root
+db2 ansible_host=192.168.33.203 ansible_user=root
+
+[all_pgpool]
+pgp0 ansible_host=192.168.33.101 ansible_user=root
+pgp1 ansible_host=192.168.33.102 ansible_user=root
+pgp2 ansible_host=192.168.33.103 ansible_user=root

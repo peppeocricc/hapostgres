@@ -1,0 +1,6 @@
+FROM local/c7-systemd
+RUN yum -y install openssh-server; yum clean all; systemctl enable sshd.service
+EXPOSE 22
+COPY id_rsa.pub /root/.ssh/authorized_keys 
+COPY pam_sshd /etc/pam.d/sshd
+CMD ["/usr/sbin/init"]

@@ -1,0 +1,19 @@
+node_id={{ repmgr_node_id['%s' | format(inventory_hostname) ] }}
+node_name='{{ hostvars['%s' | format(inventory_hostname)].ansible_host }}'
+conninfo='host={{ hostvars['%s' | format(inventory_hostname)].ansible_host }} port={{ postgresql_port }} user={{ repmgr_user }} dbname=repmgr connect_timeout=2'
+data_directory='{{ postgresql_data }}'
+pg_bindir='/usr/pgsql-13/bin'
+repmgr_bindir='/usr/pgsql-13/bin'
+use_replication_slots=true
+service_start_command   = 'sudo systemctl start postgresql-13'
+service_stop_command    = 'sudo systemctl stop postgresql-13'
+service_restart_command = 'sudo systemctl restart postgresql-13'
+service_reload_command  = 'sudo systemctl reload postgresql-13'
+log_file='/var/log/repmgr/repmgrd.log'
+promote_command='/usr/pgsql-13/bin/repmgr standby promote -f /etc/repmgr/13/repmgr.conf --log-to-file'
+follow_command='/usr/pgsql-13/bin/repmgr standby follow -f /etc/repmgr/13/repmgr.conf --log-to-file --upstream-node-id=%n'
+ssh_options='-q -o ConnectTimeout=10 -o StrictHostKeyChecking=no -p {{ docker_db_ssh_port | default(22) }}'
+#failover=automatic
+#priority=200
+#reconnect_attempts=4
+#reconnect_interval=5

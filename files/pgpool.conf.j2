@@ -1,0 +1,160 @@
+backend_clustering_mode = 'streaming_replication'
+listen_addresses = '*'
+port = {{ pgpool_sql_port }}
+socket_dir = '/var/run/postgresql'
+
+pcp_listen_addresses = '*'
+pcp_port = {{ pcp_port }}
+pcp_socket_dir = '/var/run/postgresql'
+
+enable_pool_hba = off
+pool_passwd = 'pool_passwd'
+allow_clear_text_frontend_auth = on
+authentication_timeout = 1min
+
+backend_hostname0 = '{{ hostvars['db0'].ansible_host }}'
+backend_port0 = {{ postgresql_port }}
+backend_weight0 = 1
+backend_data_directory0 = '{{ postgresql_data }}'
+backend_flag0 = 'ALLOW_TO_FAILOVER'
+backend_application_name0 = ''
+
+backend_hostname1 = '{{ hostvars['db1'].ansible_host }}'
+backend_port1 = {{ postgresql_port }}
+backend_weight1 = 1
+backend_data_directory1 = '{{ postgresql_data }}'
+backend_flag1 = 'ALLOW_TO_FAILOVER'
+backend_application_name1 = ''
+
+backend_hostname2 = '{{ hostvars['db2'].ansible_host }}'
+backend_port2 = {{ postgresql_port }}
+backend_weight2 = 1
+backend_data_directory2 = '{{ postgresql_data }}'
+backend_flag2 = 'ALLOW_TO_FAILOVER'
+backend_application_name2 = ''
+
+ssl = on
+ssl_key = 'server.key'
+ssl_cert = 'server.crt'
+
+reserved_connections = 0
+num_init_children = 90
+listen_backlog_multiplier = 2
+connection_cache = on
+max_pool = 4
+
+serialize_accept = on
+child_life_time = 0
+child_max_connections = 400
+connection_life_time = 0
+client_idle_limit = 0
+reset_query_list = 'ABORT; DISCARD ALL'
+
+log_destination = 'stderr'
+logging_collector = on
+log_directory = '/var/log/pgpool'
+log_filename = 'pgpool-%Y-%m-%d.log'
+log_file_mode = 0600
+log_rotation_age = 1d
+log_rotation_size = 10MB
+log_truncate_on_rotation = off
+log_line_prefix = '%t: pid %p: '   # printf-style string to output at beginning of each log line.
+log_connections = off
+log_disconnections = off
+log_hostname = off
+log_statement = off
+log_per_node_statement = off
+log_client_messages = off
+log_standby_delay = 'if_over_threshold'
+#syslog_facility = 'LOCAL6'
+#syslog_ident = 'pgpool'
+log_error_verbosity = default          # terse, default, or verbose messages
+client_min_messages = notice           # values in order of decreasing detail:
+log_min_messages = warning             # values in order of decreasing detail:
+
+load_balance_mode = on
+ignore_leading_white_space = on
+read_only_function_list = ''
+write_function_list = ''
+#write_function_list = 'nextval,setval,set_.*,update_.*,delete_.*,insert_.*'
+primary_routing_query_pattern_list = ''
+database_redirect_preference_list = ''
+app_name_redirect_preference_list = ''
+allow_sql_comments = off
+disable_load_balance_on_write = 'transaction'
+#disable_load_balance_on_write = off
+dml_adaptive_object_relationship_list= ''
+statement_level_load_balance = off
+
+pid_file_name = '/var/run/postgresql/pgpool.pid'
+logdir = '/tmp'
+memqcache_method = 'shmem'
+
+use_watchdog = on
+hostname0 = '{{ hostvars['pgp0'].ansible_host }}'
+wd_port0 = {{ watchdog_port }}
+pgpool_port0 = {{ pgpool_sql_port }}
+hostname1 = '{{ hostvars['pgp1'].ansible_host }}'
+wd_port1 = {{ watchdog_port }}
+pgpool_port1 = {{ pgpool_sql_port }}
+hostname2 = '{{ hostvars['pgp2'].ansible_host }}'
+wd_port2 = {{ watchdog_port }}
+pgpool_port2 = {{ pgpool_sql_port }}
+wd_authkey = ''
+trusted_servers = '{{ trusted_servers }}'
+ping_path = '/bin'
+delegate_IP = '{{ virtual_IP }}'
+if_cmd_path = '/sbin'
+if_up_cmd = '/bin/sudo /sbin/ip addr add {{ virtual_IP }}/24 dev {{ virtual_IP_interface }} label {{ virtual_IP_interface }}:0'
+if_down_cmd = '/bin/sudo /sbin/ip addr del {{ virtual_IP }}/24 dev {{ virtual_IP_interface }}'
+arping_path = '/sbin'
+arping_cmd = '/bin/sudo /sbin/arping -U {{ virtual_IP }} -w 1 -I {{ virtual_IP_interface }}'
+clear_memqcache_on_escalation = on
+wd_escalation_command = ''
+wd_de_escalation_command = ''
+failover_on_backend_error = off
+failover_when_quorum_exists = off
+failover_require_consensus = off
+allow_multiple_failover_requests_from_node = off
+enable_consensus_with_half_votes = off
+wd_lifecheck_method = 'heartbeat'
+wd_monitoring_interfaces_list = '{{ virtual_IP_interface }}'
+wd_interval = 10
+wd_priority = {{ watchdog_priority['%s' | format(inventory_hostname) ] }}
+wd_ipc_socket_dir = '/var/run/postgresql'
+heartbeat_hostname0 = '{{ hostvars['pgp0'].ansible_host }}'
+heartbeat_port0 = {{ heartbeat_port }}
+heartbeat_device0 = '{{ virtual_IP_interface }}'
+heartbeat_hostname1 = '{{ hostvars['pgp1'].ansible_host }}'
+heartbeat_port1 = {{ heartbeat_port }}
+heartbeat_device1 = '{{ virtual_IP_interface }}'
+heartbeat_hostname2 = '{{ hostvars['pgp2'].ansible_host }}'
+heartbeat_port2 = {{ heartbeat_port }}
+heartbeat_device2 = '{{ virtual_IP_interface }}'
+wd_heartbeat_keepalive = 2
+wd_heartbeat_deadtime = 30
+
+health_check_timeout = 20
+health_check_period = 10
+health_check_user = '{{ pgpool_postgres_user }}'
+health_check_password = ''
+health_check_database = 'postgres'
+health_check_max_retries = 6
+health_check_retry_delay = 5
+connect_timeout = 10000
+
+recovery_user = ''
+wd_lifecheck_user = ''
+
+sr_check_user = '{{ pgpool_postgres_user }}'
+sr_check_period = 10
+sr_check_password = ''
+sr_check_database = 'postgres'
+delay_threshold = 10000000
+
+auto_failback = on #does not work, maybe because of replication slots
+failover_command = '/etc/pgpool-II/failover.sh %d %h %p %D %M %m %H %P %r %R %N %S'
+follow_primary_command = ''
+#/etc/pgpool-II/follow_primary.sh %d %h %p %D %M %m %H %P %r %R %N %S'
+search_primary_node_timeout = 0
+auto_failback_interval = 30

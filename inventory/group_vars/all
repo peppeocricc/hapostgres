@@ -1,0 +1,143 @@
+#ansible_python_interpreter: /usr/bin/python3
+
+# ssh port for docker containers running postgres
+#docker_db_ssh_port: 2023
+
+# ssh port for docker containers running pgpool
+#docker_pgpool_ssh_port: 2024
+
+# The data directory for postgresql
+postgresql_data: /data/testdb
+
+# The port on which postgresql listens
+postgresql_port: 5701
+
+# The node running the primary instance of postgresql
+primary_db: db0
+
+# The port on which pgpool listens for SQL connections
+pgpool_sql_port: 9999
+
+# The virtual IP that the leader node of the pgpool clusters brings up
+virtual_IP: 192.168.33.150
+
+# The virtual interface on which the virtual IP is brought up.
+# It should be the same on the three pgpool nodes.
+virtual_IP_interface: eth1
+
+# A list of servers that pgpool will ping to check whether its network is up.
+# They should not be the sql servers.
+trusted_servers: '10.64.154.254,10.81.250.10,10.80.20.250,10.64.32.3'
+
+# Listen port for pcp
+pcp_port: 9898
+
+# Listen port for watchdog
+watchdog_port: 9000
+
+#Listen port for heartbeat - UDP
+heartbeat_port: 9694
+
+# Watchdog priority for each of the pgpool nodes.
+# That will establish which node is the leader.
+watchdog_priority:
+ pgp0: 30
+ pgp1: 20
+ pgp2: 10
+
+# pgpool user and password on postgreSQL
+# This user is only used to perform some health checks
+pgpool_postgres_user: pgpoolhc
+pgpool_postgres_password: my_pgpool_password
+
+# pcp user and password
+pcp_user: postgres
+pcp_password: my_pcp_password
+
+# reopmgr user and password on postgreSQL
+repmgr_user: repmgr
+repmgr_password: my_repmgr_password
+
+# The value of synchronous_standby_names option for postgresql
+# For db0 it will be resolved as '1 ("ebiz35","ebiz36")'
+standby_names:
+  db0: '"{{ hostvars["db1"].ansible_host }}","{{ hostvars["db2"].ansible_host }}"'
+  db1: '"{{ hostvars["db0"].ansible_host }}","{{ hostvars["db2"].ansible_host }}"'
+  db2: '"{{ hostvars["db0"].ansible_host }}","{{ hostvars["db1"].ansible_host }}"'
+
+# Value of kernel option net.core.somaxconn
+somaxconn: 2048
+###################################################################################
+# You should leave the following variables as they are.
+# In case you want to change the ssh key for postgres and pgpool
+# you need to respect the formatting
+##################################################################################
+primary_var: "{{ hostvars[ '%s' | format(primary_db) ].ansible_host }}"
+pgpool_node_id:
+  pgp0: 0
+  pgp1: 1
+  pgp2: 2
+db_node_id:
+  db0: 0
+  db1: 1
+  db2: 2
+repmgr_node_id:
+  db0: 50
+  db1: 100
+  db2: 200 
+postgres_priv_key: |
+  -----BEGIN RSA PRIVATE KEY-----
+  MIIEpAIBAAKCAQEA1HAi9gOkvDnNFCpI7o/YO07SA1dM4LRCwBuP35bM2cfrrUMV
+  KMma1PunnMzLbPPQoSr4ZAbDtLhtRw7mXaqF3S5CrMhQMKWcx5SVpbrfkOtCd8r/
+  fBUJVCDSutTm/Ja4PQNSQ+4u3OXcJFLs4Hat+aG1JQfZp2DoOf5GjfsedudBPbqe
+  DcsXteOjehRDflF2eAPLynLqrmUD8+GBombE41aoWY0fyTiHOUKtsHKyKW0zPiCU
+  TczBufJLKv5wBoJ5iQNwo2OMDiHj5RMhknwO7XfR9x6VNnqZ1ffFR7VptgIKLE6O
+  NxTmn/IjYa8A6P8P1nAcLEzETnVIu03KL5bw1QIDAQABAoIBAGyOyS7SedI971CI
+  szBFjYfxJVzTtdN2Ck5FR2ZIl3IKuaKWjy+Cpn6EAwkbljCc/1X8sWXcFxI41I7l
+  TE89Hp8CTswgqOnTF6TdhwNj1W8m6ZZxw9DSpyu4gjc7KLaXBpsXIWjZRFVZmP9u
+  6OFjhE/2lKzRsCXaXZGVINTZKJ41bD59Plld6wHIkBVGMFzuosA8NRYYSTSWf44S
+  rXec6DiD0qB1xu/+OV+xkWPsM2EMN2c18QPm4S4hp/ioksblyNz0eM2nyVTFQ1YW
+  9fEuZFYo72CtjrjGjIX44QR+NF56LQNpqhkAicgqe16DRE5SNy6vUxI50LVgqCtE
+  MM8y9QECgYEA7U9ysm9w+ik8lWbAQpZD/4m4YTeocSmB8brnJZ679doXM48NFbc2
+  DALt8bAFHF2GUpXfmLmOrbNWbWylezhSUWUs7BD4AV9ht46IRdM5bgQ6CBzYa8qw
+  GK1N9jJ/uOqLQRpMjiWAISqy1QnKiZ0NDj1heCYKsXoxqUYM345/dCECgYEA5Ss5
+  MQWm56k2z3jHN8By26R54dV7jB46t487Xj6CKKje/pyKeG/uYdmOKeWR5lsAgyjJ
+  SkSy9o7N9vOH4UGEgNn4gVhd0hrFrRWgbgH5pYoISJQ7X3o2nMPnWfcVLnFd5nUR
+  34Pe1h3fnv74wyzE0Xqs/0hnM4ljPgMQTLUXJjUCgYEAjeotFTg/v9pZOJ8x6qAi
+  GfcqJDk8qi/AXeb/xCehD+1UYqjxkkL2N0ipMxeodsYXRdwK0zJkeMv+q4GFlKKh
+  17tBmgqrxWZc8YBzTg57EafFbISTiCK2HIvHS6v3ZYYdsNkhXwBeF3eJao1oadNZ
+  s2JRn6BgVLJWcHxLxoVZAwECgYBvb4Ez8Uejxoi8gkJ9PbucSnJp+mFFVT3AHIoF
+  3ed01gj5Ti2XOvZz5lJW1ScJGJ87KA4ZayaK9g35U5pzUmSYM2W/n7Sfgh01eRq1
+  44f9kw1MHahxWQBNYoWRHbDTEJVUhwDV603kWEpxChL09UQPiNOunwpv6RK1CNBY
+  PIaxMQKBgQCziiA5hFVunyG+Duza6xzAxZxYZSdfIZwz6zUDwOONfB2T/C/AaJT1
+  38KVssL5YEo1JR7+a6dAztbFgpa4lJPWIlnvrT1bbKrlxX4DsZ/sH0lcpLGW3bGm
+  gIOHaOcAGOBpEcu34Z5movAfHNekTgZ3A+NFE85UULWv9DOewTnCjw==
+  -----END RSA PRIVATE KEY-----
+pgpool_priv_key: |
+  -----BEGIN RSA PRIVATE KEY-----
+  MIIEpAIBAAKCAQEAovrKeI+VHnq2aPZxSmA63U3y5uXI/2D3dGRHMTSkxY9p1stS
+  hP82tIK1ltlfG1wEW7eO4VxSuZB31InP7dmcWwBRkXu4V39iTRRaYn12u82tgKg5
+  IRXbHpCCasixURVqMdAm8ptIFgeXFVRY9MeVVyW4lCkDEfSO1GwKjc01s6QTMZza
+  quEI4N+akMZUR7T078s8NMcLwFqOzKEqE7IAK2XO/69N+U/EF0uGE62/xszcU1BS
+  9dp/WoChkkyXyqguLhJA0Ld9hH6lx+O3vpAHKTBGC3ArbggcOkdB3bJvLt1Rx5VS
+  cFNYPO218+e89O1E5BdR+BEWJ/jOSTeX1S/ulwIDAQABAoIBAQCbp+q4OmmxMoIE
+  vVp2LnIJ6uiSnePaBEJSZ3OXCzBTfyUWgBnP6+/TdwL3j6PF/Zwr/KP5mLNphxDr
+  bLOp9qvePe+pgwAMkRzRgR7R8gH0W/vZZNErSDR+fIYSdprjVhCWgrav/p5aa+Vf
+  +a78GaIIGX6wAntsKqY/OvDZfaRMbGE0CSbInwzpLHgQ9rZPlznMSXSYN3fxmK7z
+  11is2oEAV9DgnShmxCmuvqufZhQS9I2chOcelYG/SR30QK0stZRSOCR+BCUUKZc6
+  wkL/l9OYg8zLunrcETAwDsioEpSLaRUo8/mz1cXEs8QgzVZwvkugo4vVwVLFvWr8
+  rklh+twBAoGBANc5u7S+0vWqWb0bbaxYHl2AZY60P6fPo1lHmYIlD9Ap811/ajGN
+  vJjgszkalfsKS1vdYhgRClBJcs1iDokek3ogxFIDRAF3fGAu2xJekMGUmJYI+Px/
+  isbk+PX8jY268V0sI44aL0+ctFpr9uVk+jB5vyeeotI8iM+TMNCx57FjAoGBAMHb
+  LK/L1bV4QFzyA43++gV9hNLLvDMV0UB2WHz8jydB//wAmu5VqqjpNgiH8NFUSmY3
+  CGQbRdfQ4PLTMVsujmq6RqQ911U2C4SIcE/Ftimi5MD13xMXzFWXAvCQJjQLwF7O
+  tjS62sR12HiAikS5OPvyARRjleMKQj/pwFcJ3849AoGAdMHUK5SN20njzuwvThyr
+  tGuwLH9qPP4ujoOCKpEyh+oKJUG2+VT76C+V6reaf4qxIQ/zZDzyTGXcCsFUQ1y8
+  Arf96MPuw6DvbzpcDBYTD4EuWc5aTJhgT8/to3yzyhyNTc9hJnjcC6NmT9tcIEvs
+  Uhnp8nNjvwup6HngNIceuyMCgYEAhACMk0BHS4SQvzmEtiITeb2YvjlA88A9dpmf
+  c6w+hkro1l5LIVNwHAiBZJm8n62345ZBvnjbvDNdmbu5dg9jpsUk6R27DSj5+ss1
+  PvywJ/Xlsoc52TRxTS7BL7HYccQ2v9geNhWudeyQ9K0Cef1uEhEeLxYIsEsCBadT
+  83Cj1zkCgYAlooxGy4veIsyOoqebVbjEsYzRtHfvJi+hOzhrd4DAc7DxC4MvCxv1
+  1h0Q4ThV9lbMsA1n5lyfQFNAILKwiNxpkGP2hgjQPpcaMMpZHw7eyE7oE12VOvtw
+  emxLcMExVCm8KE77PQDhYzA/wDBX5/5gf+tAhEOblTedk/bC6f3ZZg==
+  -----END RSA PRIVATE KEY-----

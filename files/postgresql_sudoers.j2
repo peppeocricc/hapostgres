@@ -1,0 +1,7 @@
+Defaults:postgres !requiretty
+postgres ALL = NOPASSWD: /usr/bin/systemctl stop postgresql-13, \
+        /usr/bin/systemctl start postgresql-13, \
+        /usr/bin/systemctl restart postgresql-13, \
+	/usr/bin/systemctl reload postgresql-13, \
+        /usr/pgsql-13/bin/pg_ctl  -w -D '{{ postgresql_data }}' promote
+

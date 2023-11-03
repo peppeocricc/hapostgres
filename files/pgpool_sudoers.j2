@@ -1,0 +1,4 @@
+Defaults:postgres !requiretty
+postgres ALL = NOPASSWD: /sbin/ip addr del {{ virtual_IP }}/24 dev {{ virtual_IP_interface  }}, \
+        /sbin/ip addr add {{ virtual_IP }}/24 dev {{ virtual_IP_interface  }} label {{ virtual_IP_interface  }}\:0, \
+        /sbin/arping -U {{ virtual_IP }} -w 1 -I {{ virtual_IP_interface  }}

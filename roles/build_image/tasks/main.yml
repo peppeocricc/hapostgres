@@ -1,0 +1,90 @@
+- name: Set somaxconn in sysctl.conf
+  ansible.posix.sysctl:
+    name: net.core.somaxconn
+    value: '{{ somaxconn }}'
+    state: present
+    reload: yes
+
+- name: Test if docker is installed
+  command: docker
+  register: result
+  ignore_errors: true
+
+- name: Install docker
+  include_role: 
+    name: "geerlingguy.docker"
+  when: result.failed
+ 
+- name: Install pip and docker SDK
+  include_role: 
+    name: "geerlingguy.pip"
+
+- name: Create system group postgres
+  group:
+    name: postgres
+    state: present
+    system: yes
+
+- name: Create system user postgres
+  user:
+    name: postgres
+    group: postgres
+    system: yes
+    state: present
+    home: "/var/lib/pgsql"
+    comment: "PostgreSQL Server"
+    password: "!"
+    shell: "/bin/bash"
+  register: postgresuser
+
+- name: Copy dockerfiles and public key to the target
+  copy: 
+    src: '{{ item }}'
+    dest: '/root/'
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - files/dockerfile_1
+    - files/dockerfile_2
+    - files/dockerfile_3
+    - ~/.ssh/id_rsa.pub
+    - files/pam_sshd
+
+- name: Copy sshd_config to the target
+  template:
+    src: files/sshd_config.j2
+    dest: '/root/sshd_config'
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Build docker image local/c7-systemd (centos7 + systemd)
+  community.docker.docker_image:
+    build:
+      dockerfile: dockerfile_1
+      path: /root
+    name: local/c7-systemd
+    source: build
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+- name: Build docker image local/c7-systemd-sshd (centos7 + systemd + sshd)
+  community.docker.docker_image:
+    build:
+      dockerfile: dockerfile_2
+      path: /root
+    name: local/c7-systemd-sshd
+    source: build
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+- name: Build docker image local/c7-systemd-sshd-pgp (centos7 + systemd + sshd + changed port)
+  community.docker.docker_image:
+    build:
+      dockerfile: dockerfile_3
+      path: /root
+    name: local/c7-systemd-sshd-pgp
+    source: build
+  vars:
+    ansible_python_interpreter: /usr/bin/python3

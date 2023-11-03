@@ -1,0 +1,150 @@
+- name: Install pgpool 4.2.1 repository
+  yum:
+    name: https://www.pgpool.net/yum/rpms/4.2/redhat/rhel-7-x86_64/pgpool-II-release-4.2-1.noarch.rpm
+    state: present
+    
+- name: Install pgpool 4.2.1 and some other pkg
+  yum:
+    name: pgpool-II-pg13,pgpool-II-pg13-debuginfo,python2-cryptography,sudo,iproute,openssh-clients
+    state: present
+
+- name: Copy pgpool.conf
+  template:
+    src: files/pgpool.conf.j2
+    dest: /etc/pgpool-II/pgpool.conf
+    owner: postgres
+    group: postgres
+    mode: '0644'
+  notify: Reload pgpool
+
+- name: Create file pgpool_node_id
+  template:
+    src: files/pgpool_node_id.j2
+    dest: /etc/pgpool-II/pgpool_node_id
+    owner: postgres
+    group: postgres
+    mode: '0644'
+  notify: Reload pgpool
+
+- name: Set pgpool options in sysconfig
+  lineinfile:
+    path: /etc/sysconfig/pgpool
+    regexp: '^OPTS='
+    line: 'OPTS=" -D -n"'
+  
+- name: Create log directory for pgpool
+  file:
+    path: /var/log/pgpool
+    state: directory
+    mode: '0755'
+    owner: postgres
+    group: postgres
+
+- name: Create socket directory for pgpool
+  file:
+    path: /var/run/postgresql
+    state: directory
+    mode: '0755'
+    owner: postgres
+    group: postgres
+
+- name: Hash pcp password
+  shell: /usr/bin/pg_md5 {{ pcp_password }}
+  register: pcp_hash
+
+- name: Create pcp password file
+  template:
+    src: files/pcp.conf.j2
+    dest: /etc/pgpool-II/pcp.conf
+    owner: postgres
+    group: postgres
+    mode: '0600'
+  notify: Reload pgpool
+
+- name: Get to know where postgres home directory is
+  user:
+    name: postgres
+    state: present
+  register: postgres_env_vars
+
+- name: Create .pcppass file
+  template:
+    src: files/pcppass.j2
+    dest: '{{ postgres_env_vars.home }}/.pcppass'
+    owner: postgres
+    group: postgres
+    mode: '0600'
+
+- name: Create pool_passwd file
+  template:
+    src: files/pool_passwd.j2
+    dest: /etc/pgpool-II/pool_passwd
+    owner: postgres
+    group: postgres
+    mode: '0600'
+  notify: Reload pgpool
+
+- name: Create a sudoers.d file for pgpool
+  template:
+    src: files/pgpool_sudoers.j2
+    dest: /etc/sudoers.d/pgpool
+    owner: root
+    group: root
+    mode: '0400'
+
+- name: Copy script failover.sh
+  template:
+    src: files/failover.sh.j2
+    dest: /etc/pgpool-II/failover.sh
+    owner: postgres
+    group: postgres
+    mode: '0755'
+
+- name: Create directory ~postgres/.ssh if it does not exist
+  file:
+    path: '{{ postgres_env_vars.home }}/.ssh'
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Copy ssh priv key for pgpool
+  template:
+    src: files/pgpool_ssh_key.j2
+    dest: '{{ postgres_env_vars.home }}/.ssh/pgpool_ssh_key'
+    owner: postgres
+    group: postgres
+    mode: '0600'
+
+- name: Generate an OpenSSL private key 
+  community.crypto.openssl_privatekey:
+    path: /etc/pgpool-II/server.key
+
+- name: Generate an OpenSSL Certificate Signing Request
+  community.crypto.openssl_csr:
+    path: /etc/pgpool-II/server.csr
+    privatekey_path: /etc/pgpool-II/server.key
+    common_name: '{{ ansible_fqdn }}'
+
+- name: Generate a Self Signed OpenSSL certificate
+  community.crypto.x509_certificate:
+    path: /etc/pgpool-II/server.crt
+    privatekey_path: /etc/pgpool-II/server.key
+    csr_path: /etc/pgpool-II/server.csr
+    provider: selfsigned
+
+- name: Assign the ownership of key and cert to postgres
+  file: 
+    path: '/etc/pgpool-II/{{ item }}'
+    owner: postgres
+    group: postgres
+  loop:
+    - server.key
+    - server.crt
+    - server.csr
+
+- name: Start pgpool and disable it at boot
+  systemd:
+    name: pgpool
+    state: started
+    enabled: no

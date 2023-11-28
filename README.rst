@@ -24,7 +24,7 @@ done on the failed server, but ``pgp0`` won’t use it anymore to load balance S
 In case of failure of ``db0``, the primary postgresql server, ``pgp0`` detects the failure, marks its state as
 down, connects to ``db0`` and stops the postgresql server (in case it is not already down), then connects to
 ``db1`` and uses repmgr to promote it as the new primary. repmgr will also connect to ``db2`` and make it
-stream from ``db1`` .
+stream from ``db1``.
 
 In case of failure of ``pgp0``, the three pgpool servers decide with a quorum mechanism to assign the
 virtual IP to another pgpool server that becomes the new frontend server.
